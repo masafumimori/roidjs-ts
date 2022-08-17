@@ -12,11 +12,11 @@ import { is, isNil, has } from "ramda"
 const atoms: Map<string, RecoilState<Atoms>> = new Map()
 let refs = {}
 
-export const Roid = ({
+export const Roid: React.FC<RoidProps> = ({
   children,
   defaults = {},
   override = true
-}: RoidProps) => {
+}) => {
   const Path = ({ children }: { children: RoidProps["children"] }) => {
     if (isNil(atoms)) {
       // TODO: might need to change how to treat atoms when they are null/undefined
@@ -43,14 +43,13 @@ export const Roid = ({
   )
 }
 
-const Injection = ({ _atoms, Component }: InjectionProps) => {
+const Injection: React.FC<InjectionProps> = ({ _atoms, Component }) => {
   const $: { [key: string]: Atoms } = {}
   const setters: { [key: string]: SetterOrUpdater<Atoms> } = {}
-  let _ = {}
   const updated: Map<string, RecoilState<Atoms>> = new Map()
 
   for (const v of _atoms || []) {
-    let key
+    let key: string
 
     if (is(Object)(v) && has("get")(v)) {
       key = (v as Atoms).key
@@ -91,7 +90,7 @@ const Injection = ({ _atoms, Component }: InjectionProps) => {
   const get = (key: string) =>
     typeof updated.get(key) !== "undefined" ? updated.get(key) : $[key]
 
-  const set = (val: any, key: string) => {
+  const set = (val: any, key: GetKeysOf<typeof _atoms>) => {
     updated.set(key, val)
     setters[key](val)
   }
@@ -105,5 +104,10 @@ const Injection = ({ _atoms, Component }: InjectionProps) => {
   return <Component {...{ $, set, fn, get, refs }} />
 }
 
-export const inject = (atoms: any, Component: any) => () =>
-  <Injection {...{ _atoms: atoms, Component }} />
+export const inject =
+  (
+    atoms: InjectionProps["_atoms"],
+    Component: React.ElementType<ComponentProps<InjectionProps["_atoms"]>>
+  ) =>
+  () =>
+    <Injection {...{ _atoms: atoms, Component }} />
